@@ -1,0 +1,4 @@
+criar projeto vite react - npm create vite@latest
+instalar roteador - npm i react-router-dom
+instalar bootstrap - npm install react-bootstrap bootstrap
+importar os estilos do bootstrap no main.jsx - import 'bootstrap/dist/css/bootstrap.min.css';

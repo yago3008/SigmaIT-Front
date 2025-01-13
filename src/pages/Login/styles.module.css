@@ -1,0 +1,17 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 92vh;
+
+}
+
+.form {
+    width: 25rem;
+}
+
+.button {
+    background-color: var(--sigma-blue);
+}
