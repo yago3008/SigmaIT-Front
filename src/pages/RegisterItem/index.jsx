@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
+
     const [ownerName, setOwnerName] = useState("");
     const [itemName, setItemName] = useState("");
     const [quantity, setQuantity] = useState(0);
@@ -14,11 +15,12 @@ const Register = () => {
     const [description, setDescription] = useState("");
     const [saveTemplate, setSaveTemplate] = useState(false);
     const [templateName, setTemplateName] = useState("");
-    const [showAdditionalInfo, setShowAdditionalInfo] = useState(false); // Estado para o checkbox
+    const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
     const [additionalInfo, setAdditionalInfo] = useState({});
     const [additionalKey, setAdditionalKey] = useState("");
     const [additionalValue, setAdditionalValue] = useState("");
     const [cost, setCost] = useState(0);
+
 
     const [showMessage, setShowMessage] = useState(false);
     const [showError, setShowError] = useState(false);
@@ -26,6 +28,7 @@ const Register = () => {
 
     const navigate = useNavigate();
     const token = sessionStorage.getItem("AUTH");
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -49,14 +52,20 @@ const Register = () => {
         });
 
         const data = await response.json();
-
+        console.log(data);
         if (response.status === 200) {
             setShowMessage(data.message);
             setShowError(false);
         } else {
             setShowError(true);
-            setErrorMessage(data.error);
-            setShowMessage("");
+            if(!data.error){
+                setErrorMessage(data.message);
+                setShowMessage("");
+            } else {
+                setErrorMessage(data.error);
+                setShowMessage("");
+            }
+
         }
     };
 
@@ -145,7 +154,7 @@ const Register = () => {
 
                         <Form.Group className="mb-3">
                             <Form.Check
-                                type="checkbox"
+                                type="switch"
                                 label="Add additional info"
                                 onChange={(e) => setShowAdditionalInfo(e.target.checked)}
                             />
