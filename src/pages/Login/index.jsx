@@ -5,6 +5,7 @@ import Form from 'react-bootstrap/Form';
 import Alert from 'react-bootstrap/Alert';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Login = () => {
     const [username, setUsername] = useState("");
@@ -31,10 +32,27 @@ const Login = () => {
             sessionStorage.setItem('AUTH', token);
             navigate('/');
         } else {
-            setShowError(true);
-            setErrorMessage(data.error);
+            if (username  === 'admin' && password === 'admin') {
+                setShowError(true);
+                setErrorMessage('GET OUT HERE NOW!😡');
+            }
+            else{
+                setShowError(true);
+                setErrorMessage(data.error);
+            };
+
         }
     };
+
+    useEffect(() => {
+        if (showError) {
+            const timeout = setTimeout(() => {
+                setShowError(false);
+            }, 3000);
+
+            return () => clearTimeout(timeout); 
+        }
+    }, [showError]);
 
     return (
         <div>

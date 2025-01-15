@@ -5,11 +5,13 @@ import Form from 'react-bootstrap/Form';
 import Alert from 'react-bootstrap/Alert';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Register = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showError, setShowError] = useState(false);
+    const [showMessage, setShowMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const navigate = useNavigate();
     const token = sessionStorage.getItem("AUTH");
@@ -29,13 +31,25 @@ const Register = () => {
         const data = await response.json();
 
         if (response.status === 200) {
-            console.log(data);
+            setShowMessage(data.message)
+            setShowError(false);
         } else {
             setShowError(true);
-            console.log(data);
             setErrorMessage(data.error);
+            setShowMessage('')
         }
     };
+
+    useEffect(() => {
+        if (showError || showMessage) {
+            const timeout = setTimeout(() => {
+                setShowError(false);
+                setShowMessage("");
+            }, 3000);
+
+            return () => clearTimeout(timeout); 
+        }
+    }, [showError, showMessage]);
 
     return (
         <div>
@@ -71,6 +85,7 @@ const Register = () => {
                         </Button>
                         <div>
                             {showError && <Alert variant="danger">{errorMessage}</Alert>}
+                            {showMessage && <Alert variant="success">{showMessage}</Alert>}
                         </div>
                     </Form>
                 </div>

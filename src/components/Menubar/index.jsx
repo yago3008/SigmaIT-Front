@@ -16,7 +16,7 @@ const Menubar = () => {
                             <Nav.Link href="/register">Register</Nav.Link>
                             <Nav.Link href="/login">Login</Nav.Link>
                             <NavDropdown title="Actions" id="basic-nav-dropdown">
-                                <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
+                                <NavDropdown.Item href="/stock/register-item">Register Item</NavDropdown.Item>
                                 <NavDropdown.Item href="#action/3.2">
                                     Another action
                                 </NavDropdown.Item>
