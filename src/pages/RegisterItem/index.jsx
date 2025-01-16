@@ -10,7 +10,6 @@ const Register = () => {
     const [itemName, setItemName] = useState("");
     const [quantity, setQuantity] = useState(0);
     const [type, setType] = useState("");
-    const [description, setDescription] = useState("");
     const [saveTemplate, setSaveTemplate] = useState(false);
     const [templateName, setTemplateName] = useState("");
     const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
@@ -27,7 +26,59 @@ const Register = () => {
     const [showError, setShowError] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
+    const [userResults, setUserResults] = useState([]);
+    const [debounceTimer, setDebounceTimer] = useState(null);  // Para debouncing
+
     const token = sessionStorage.getItem("AUTH");
+
+    // Função para buscar usuários
+    const fetchUsers = async (query) => {
+        try {
+            const response = await fetch(`http://localhost:3000/user/search-user?name=${query}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro na requisição: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (Array.isArray(data.users)) setUserResults(data.users);
+        } catch (err) {
+            console.error("Erro ao buscar usuários:", err);
+            setUserResults([]);
+        }
+    };
+
+    // Debounced search function
+    const handleOwnerNameChange = (e) => {
+        const { value } = e.target;
+        setOwnerName(value);
+
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+
+        setDebounceTimer(
+            setTimeout(() => {
+                if (value.length >= 3) {  // Pode ser ajustado para mais/menos caracteres
+                    fetchUsers(value);
+                } else {
+                    setUserResults([]);
+                }
+            }, 500)  // Delay para não fazer uma requisição a cada tecla
+        );
+    };
+
+    // Função para quando o usuário clica em um nome
+    const handleUserClick = (name) => {
+        setOwnerName(name);
+        setUserResults([]);  // Limpa a lista de resultados
+    };
 
     useEffect(() => {
         const fetchTemplates = async () => {
@@ -41,13 +92,13 @@ const Register = () => {
                             Authorization: `Bearer ${token}`,
                         },
                     });
-    
+
                     if (!response.ok) {
                         throw new Error(`Erro na requisição: ${response.status}`);
                     }
-    
+
                     const data = await response.json();
-    
+
                     if (Array.isArray(data.templates)) setTemplates(data.templates);
                 }
             } catch (err) {
@@ -62,7 +113,6 @@ const Register = () => {
         e.preventDefault();
         const templateData = selectedTemplate ? JSON.parse(selectedTemplate) : {};
         const finalAdditionalInfo = { ...additionalInfo, ...templateData };
-
         const response = await fetch("http://localhost:3000/stock/register-item", {
             method: "POST",
             headers: {
@@ -74,7 +124,6 @@ const Register = () => {
                 itemName,
                 quantity,
                 type,
-                description,
                 saveTemplate,
                 templateName,
                 additionalInfo: finalAdditionalInfo,
@@ -113,7 +162,7 @@ const Register = () => {
             return () => clearTimeout(timeout);
         }
     }, [showError, showMessage]);
-    
+
     return (
         <div>
             <Menubar />
@@ -121,13 +170,30 @@ const Register = () => {
                 <div className={styles.form}>
                     <h2>Register Item</h2>
                     <Form>
+                        {/* Campos do Formulário */}
                         <Form.Group className="mb-3">
                             <Form.Label>Owner</Form.Label>
                             <Form.Control
                                 type="text"
                                 placeholder="Owner name"
-                                onChange={(e) => setOwnerName(e.target.value)}
+                                value={ownerName}
+                                onChange={handleOwnerNameChange}
                             />
+                            {userResults.length > 0 && (
+                                <ul className={styles.userResultsList}>
+                                    {userResults.map((user) => (
+                                        <li key={user.id}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleUserClick(user.name)}
+                                                className={styles.userResultButton}
+                                            >
+                                                {user.name}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </Form.Group>
 
                         <Form.Group className="mb-3">
@@ -164,15 +230,6 @@ const Register = () => {
                         </Form.Group>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Description</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Description"
-                                onChange={(e) => setDescription(e.target.value)}
-                            />
-                        </Form.Group>
-
-                        <Form.Group className="mb-3">
                             <Form.Label>Cost</Form.Label>
                             <Form.Control
                                 type="text"
@@ -181,19 +238,31 @@ const Register = () => {
                             />
                         </Form.Group>
 
-                        <Form.Group className="mb-3">
-                            <Form.Check
-                                type="switch"
-                                label="Add additional info"
-                                onChange={(e) => {
-                                    setShowAdditionalInfo(e.target.checked);
-                                    if (e.target.checked) {
-                                        setShowTemplateSwitch(false); // Desativa o template
-                                    }
-                                }}
-                            />
-                        </Form.Group>
+                        <Form.Check
+                            type="switch"
+                            label="Add additional info"
+                            onChange={(e) => {
+                                setShowAdditionalInfo(e.target.checked);
+                                if (e.target.checked) {
+                                    setShowTemplateSwitch(false);
+                                    setSelectedTemplate(null);
+                                }
+                            }}
+                            checked={showAdditionalInfo}
+                        />
 
+                        <Form.Check
+                            type="switch"
+                            label="Use template"
+                            onChange={(e) => {
+                                setShowTemplateSwitch(e.target.checked);
+                                if (e.target.checked) {
+                                    setShowAdditionalInfo(false);
+                                    setAdditionalInfo({});
+                                }
+                            }}
+                            checked={showTemplateSwitch}
+                        />
                         {showAdditionalInfo && (
                             <>
                                 <div className={styles.additionalInfo}>
@@ -226,43 +295,41 @@ const Register = () => {
                                 </div>
                             </>
                         )}
-
-                        <Form.Group className="mb-3">
-                            <Form.Check
-                                type="switch"
-                                label="Use template"
-                                onChange={(e) => {
-                                    setShowTemplateSwitch(e.target.checked);
-                                    if (e.target.checked) {
-                                        setShowAdditionalInfo(false); // Desativa o additionalInfo
-                                    }
-                                }}
-                            />
-                        </Form.Group>
-                                
                         {showTemplateSwitch && (
-                            <Form.Group className="mb-3">
-                                <Form.Label>Select a Template</Form.Label>
-                                <Form.Select onChange={(e) => setSelectedTemplate(e.target.value)}>
-                                    <option value="">Select Template</option>
-                                    
-                                    {templates.map((template, index) => (
-                                        <option key={index} value={JSON.stringify(template)}>
-                                            {template.templateName || `Template ${index + 1}`}
-                                        </option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
+    <>
+        <Form.Group className="mb-3">
+            <Form.Label>Available Templates</Form.Label>
+            <Form.Select
+                onChange={(e) => setSelectedTemplate(e.target.value)}
+                value={selectedTemplate || ""}
+            >
+                <option value="">Select a Template</option>
+                {templates.map((template, index) => (
+                    <option key={index} value={JSON.stringify(template)}>
+                        {template.templateName}
+                    </option>
+                ))}
+            </Form.Select>
+        </Form.Group>
+        {selectedTemplate && (
+        <div className={styles.selectedTemplate}>
+            <strong>Template Selected:</strong>
+            <pre>{JSON.stringify(JSON.parse(selectedTemplate), null, 2)}</pre>
+        </div>
+    )}
+    </>
+)}
+                        {showMessage && (
+                            <Alert variant="success" onClose={() => setShowMessage(false)} dismissible>
+                                {showMessage}
+                            </Alert>
                         )}
-
-                        <Button type="submit" className={styles.button} onClick={handleSubmit}>
-                            Submit
-                        </Button>
-
-                        <div>
-                            {showError && <Alert variant="danger">{errorMessage}</Alert>}
-                            {showMessage && <Alert variant="success">{showMessage}</Alert>}
-                        </div>
+                        {showError && (
+                            <Alert variant="danger" onClose={() => setShowError(false)} dismissible>
+                                {errorMessage}
+                            </Alert>
+                        )}
+                        <Button onClick={handleSubmit}>Submit</Button>
                     </Form>
                 </div>
             </div>

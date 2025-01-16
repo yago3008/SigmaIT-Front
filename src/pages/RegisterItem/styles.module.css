@@ -33,3 +33,51 @@
 .addButton {
     margin-left: 10px;
 }
+
+/* Estilo para a lista de resultados */
+.userResultsList {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+/* Estilo para os botões de usuário */
+.userResultButton {
+    display: block;
+    width: 100%;
+    max-width: 100%; /* Garantir que o botão não ultrapasse o tamanho da tela */
+    padding: 10px;
+    text-align: left;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s, transform 0.2s ease;
+    white-space: nowrap; /* Impede quebra de linha */
+    overflow: hidden;    /* Oculta qualquer conteúdo extra */
+    text-overflow: ellipsis; /* Exibe "..." quando o texto ultrapassar */
+    box-sizing: border-box; /* Para garantir que o padding não quebre o layout */
+    max-height: 50px; /* Define uma altura máxima */
+    line-height: 1.5; /* Ajusta o espaçamento vertical do texto */
+}
+
+/* Estilo quando o botão é focado */
+.userResultButton:hover {
+    background-color: #0056b3;
+    transform: scale(1.01);
+}
+
+.userResultButton:focus {
+    outline: none;
+}
+
+.userResultButton:active {
+    background-color: #004085;
+}
