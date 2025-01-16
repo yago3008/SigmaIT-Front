@@ -4,10 +4,8 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
 const Register = () => {
-
     const [ownerName, setOwnerName] = useState("");
     const [itemName, setItemName] = useState("");
     const [quantity, setQuantity] = useState(0);
@@ -21,17 +19,50 @@ const Register = () => {
     const [additionalValue, setAdditionalValue] = useState("");
     const [cost, setCost] = useState(0);
 
+    const [showTemplateSwitch, setShowTemplateSwitch] = useState(false);
+    const [templates, setTemplates] = useState([]);
+    const [selectedTemplate, setSelectedTemplate] = useState(null);
 
     const [showMessage, setShowMessage] = useState(false);
     const [showError, setShowError] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
-    const navigate = useNavigate();
     const token = sessionStorage.getItem("AUTH");
 
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            try {
+                if (showTemplateSwitch) {
+                    setShowAdditionalInfo(false);
+                    const response = await fetch("http://localhost:3000/stock/get-template", {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+    
+                    if (!response.ok) {
+                        throw new Error(`Erro na requisição: ${response.status}`);
+                    }
+    
+                    const data = await response.json();
+    
+                    if (Array.isArray(data.templates)) setTemplates(data.templates);
+                }
+            } catch (err) {
+                console.error("Erro ao buscar templates:", err);
+                setTemplates([]);
+            }
+        };
+        fetchTemplates();
+    }, [showTemplateSwitch, token]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const templateData = selectedTemplate ? JSON.parse(selectedTemplate) : {};
+        const finalAdditionalInfo = { ...additionalInfo, ...templateData };
+
         const response = await fetch("http://localhost:3000/stock/register-item", {
             method: "POST",
             headers: {
@@ -46,26 +77,18 @@ const Register = () => {
                 description,
                 saveTemplate,
                 templateName,
-                additionalInfo,
+                additionalInfo: finalAdditionalInfo,
                 cost,
             }),
         });
 
         const data = await response.json();
-        console.log(data);
         if (response.status === 200) {
             setShowMessage(data.message);
             setShowError(false);
         } else {
             setShowError(true);
-            if(!data.error){
-                setErrorMessage(data.message);
-                setShowMessage("");
-            } else {
-                setErrorMessage(data.error);
-                setShowMessage("");
-            }
-
+            setErrorMessage(data.error || data.message);
         }
     };
 
@@ -90,7 +113,7 @@ const Register = () => {
             return () => clearTimeout(timeout);
         }
     }, [showError, showMessage]);
-
+    
     return (
         <div>
             <Menubar />
@@ -118,20 +141,26 @@ const Register = () => {
 
                         <Form.Group className="mb-3">
                             <Form.Label>Quantity</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Quantity"
-                                onChange={(e) => setQuantity(e.target.value)}
-                            />
+                            <Form.Select onChange={(e) => setQuantity(Number(e.target.value))}>
+                                {[...Array(101).keys()].map((num) => (
+                                    <option key={num} value={num}>
+                                        {num}
+                                    </option>
+                                ))}
+                            </Form.Select>
                         </Form.Group>
 
                         <Form.Group className="mb-3">
                             <Form.Label>Type</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Type"
-                                onChange={(e) => setType(e.target.value)}
-                            />
+                            <Form.Select onChange={(e) => setType(e.target.value)}>
+                                <option value="">Select Type</option>
+                                <option value="keyboard">Keyboard</option>
+                                <option value="mouse">Mouse</option>
+                                <option value="kit mouse-keyboard">Kit Mouse-Keyboard</option>
+                                <option value="headset">Headset</option>
+                                <option value="notebook">Notebook</option>
+                                <option value="other">Other</option>
+                            </Form.Select>
                         </Form.Group>
 
                         <Form.Group className="mb-3">
@@ -156,10 +185,15 @@ const Register = () => {
                             <Form.Check
                                 type="switch"
                                 label="Add additional info"
-                                onChange={(e) => setShowAdditionalInfo(e.target.checked)}
+                                onChange={(e) => {
+                                    setShowAdditionalInfo(e.target.checked);
+                                    if (e.target.checked) {
+                                        setShowTemplateSwitch(false); // Desativa o template
+                                    }
+                                }}
                             />
                         </Form.Group>
-                        
+
                         {showAdditionalInfo && (
                             <>
                                 <div className={styles.additionalInfo}>
@@ -191,6 +225,34 @@ const Register = () => {
                                     <pre>{JSON.stringify(additionalInfo, null, 2)}</pre>
                                 </div>
                             </>
+                        )}
+
+                        <Form.Group className="mb-3">
+                            <Form.Check
+                                type="switch"
+                                label="Use template"
+                                onChange={(e) => {
+                                    setShowTemplateSwitch(e.target.checked);
+                                    if (e.target.checked) {
+                                        setShowAdditionalInfo(false); // Desativa o additionalInfo
+                                    }
+                                }}
+                            />
+                        </Form.Group>
+                                
+                        {showTemplateSwitch && (
+                            <Form.Group className="mb-3">
+                                <Form.Label>Select a Template</Form.Label>
+                                <Form.Select onChange={(e) => setSelectedTemplate(e.target.value)}>
+                                    <option value="">Select Template</option>
+                                    
+                                    {templates.map((template, index) => (
+                                        <option key={index} value={JSON.stringify(template)}>
+                                            {template.templateName || `Template ${index + 1}`}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
                         )}
 
                         <Button type="submit" className={styles.button} onClick={handleSubmit}>
