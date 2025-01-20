@@ -7,6 +7,7 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Dropdown from "react-bootstrap/Dropdown";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Menubar = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -14,8 +15,10 @@ const Menubar = () => {
     const [notificationType, setNotificationType] = useState("");
     const [searchMethod, setSearchMethod] = useState("all");
     const [searchValue, setSearchValue] = useState("");
-    const [item, setItem] = useState(null);
+    const [suggestions, setSuggestions] = useState([]);  // Novo estado para armazenar as sugestões
+    const navigate = useNavigate();
 
+    // Verifica a autenticação do usuário com base no token
     useEffect(() => {
         const checkAuth = async () => {
             const token = sessionStorage.getItem("AUTH");
@@ -40,71 +43,59 @@ const Menubar = () => {
         checkAuth();
     }, []);
 
-    const updateClient = async () => {
+    const fetchSuggestions = async (method, value) => {
+        if (!value) {
+            setSuggestions([]);
+            return;
+        }
         const token = sessionStorage.getItem("AUTH");
-
         try {
-            const response = await fetch("http://localhost:3000/user/update-client", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
+            const response = await fetch(`http://localhost:3000/stock/search-item?method=${method}&value=${value}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
             const data = await response.json();
-
             if (response.ok) {
-                setNotification(`Success: ${data.message}`);
-                setNotificationType("success");
+                setSuggestions(data.items);
             } else {
-                setNotification(`Error: ${data.error || data.message}`);
-                setNotificationType("error");
+                setSuggestions([]);
             }
         } catch (error) {
-            console.error("Unexpected error:", error);
-            setNotification("An unexpected error occurred.");
-            setNotificationType("error");
+            console.error("Error fetching suggestions:", error);
+            setSuggestions([]);
         }
-
-        setTimeout(() => setNotification(""), 5000);
     };
 
-    const getItem = async (method, value) => {
-        const token = sessionStorage.getItem("AUTH");
-        const url = method === "all" ? `http://localhost:3000/stock/get-item?method=${method}` : `http://localhost:3000/stock/get-item?${method}=${value}`
-        try {
-            const response = await fetch(url, {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setItem(data.item);
-                setNotification(`Success: ${data.message}`);
-                setNotificationType("success");
-            } else {
-                setNotification(`Error: ${data.error || data.message}`);
-                setNotificationType("error");
-            }
-        } catch (error) {
-            console.error("Unexpected error:", error);
-            setNotification("An unexpected error occurred.");
-            setNotificationType("error");
-        }
-
-        setTimeout(() => setNotification(""), 5000);
+    // Atualiza o valor do campo de pesquisa e chama a função de busca de sugestões
+    const handleSearchValueChange = (e) => {
+        const value = e.target.value;
+        setSearchValue(value);
+        fetchSuggestions(searchMethod, value);  // Busca sugestões ao digitar
     };
 
+    // Atualiza o método de pesquisa
     const handleSearchMethodChange = (method) => {
         setSearchMethod(method);
+        setSearchValue("");  // Limpa o campo de pesquisa quando mudar o método
+        setSuggestions([]);  // Limpa as sugestões
     };
 
+    // Realiza a pesquisa quando o botão de pesquisa for clicado
     const handleSearch = () => {
-        getItem(searchMethod, searchValue);
+        if (!searchValue && searchMethod !== "all") {
+            setNotification("Please enter a value to search.");
+            setNotificationType("error");
+            return;
+        }
+
+        const url = searchMethod === "all"
+            ? `/stock/get-item?method=${searchMethod}`
+            : `/stock/get-item?method=${searchMethod}&value=${searchValue}`;
+        navigate(url);
     };
 
     return (
@@ -120,52 +111,58 @@ const Menubar = () => {
                             {isLoggedIn && (
                                 <NavDropdown title="Actions" id="basic-nav-dropdown">
                                     <NavDropdown.Item href="/stock/register-item">Register Item</NavDropdown.Item>
-                                    <NavDropdown.Item onClick={updateClient}>Update Clients</NavDropdown.Item>
                                     <NavDropdown.Item href="/stock/get-item">Get Item</NavDropdown.Item>
-                                    <NavDropdown.Divider />
-                                    <NavDropdown.Item href="#action/3.4">Separated link</NavDropdown.Item>
                                 </NavDropdown>
                             )}
                         </Nav>
-                        <Form className="d-flex ms-auto">
-                            <Dropdown className="me-2">
-                                <Dropdown.Toggle variant="outline-light" id="search-method-dropdown">
-                                    {searchMethod}
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item onClick={() => handleSearchMethodChange("itemID")}>
-                                        Item ID
-                                    </Dropdown.Item>
-                                    <Dropdown.Item onClick={() => handleSearchMethodChange("itemName")}>
-                                        Item Name
-                                    </Dropdown.Item>
-                                    <Dropdown.Item onClick={() => handleSearchMethodChange("type")}>
-                                        Item Type
-                                    </Dropdown.Item>
-                                    <Dropdown.Item onClick={() => handleSearchMethodChange("ownerName")}>
-                                        Owner Name
-                                    </Dropdown.Item>
-                                    <Dropdown.Item onClick={() => handleSearchMethodChange("additionalInfo")}>
-                                        Additional Info
-                                    </Dropdown.Item>
-                                    <Dropdown.Item onClick={() => handleSearchMethodChange("all")}>
-                                        All
-                                    </Dropdown.Item>
-                                </Dropdown.Menu>
-                            </Dropdown>
-                            <Form.Control
-                                type="search"
-                                placeholder="Search"
-                                className="me-2"
-                                aria-label="Search"
-                                style={{ backgroundColor: "white", color: "black" }}
-                                value={searchValue}
-                                onChange={(e) => setSearchValue(e.target.value)}
-                            />
-                            <Button variant="light" onClick={handleSearch}>
-                                Search
-                            </Button>
-                        </Form>
+                        {isLoggedIn && (
+                            <Form className="d-flex ms-auto">
+                                <Dropdown className="me-2">
+                                    <Dropdown.Toggle variant="outline-light" id="search-method-dropdown">
+                                        {searchMethod}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("id")}>
+                                            Item ID
+                                        </Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("itemName")}>
+                                            Item Name
+                                        </Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("type")}>
+                                            Item Type
+                                        </Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("ownerName")}>
+                                            Owner Name
+                                        </Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("additionalInfo")}>
+                                            Additional Info
+                                        </Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("all")}>All</Dropdown.Item>
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                                <Form.Control
+                                    type="search"
+                                    placeholder="Search"
+                                    className="me-2"
+                                    aria-label="Search"
+                                    style={{ backgroundColor: "white", color: "black" }}
+                                    value={searchValue}
+                                    onChange={handleSearchValueChange}  // Atualiza as sugestões ao digitar
+                                />
+                                <Button variant="light" onClick={handleSearch}>
+                                    Search
+                                </Button>
+                                {suggestions.length > 0 && (
+                                    <Dropdown.Menu>
+                                        {suggestions.map((item, index) => (
+                                            <Dropdown.Item key={index} onClick={() => setSearchValue(item)}>
+                                                {item}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                )}
+                            </Form>
+                        )}
                     </Navbar.Collapse>
                 </Container>
             </Navbar>
@@ -183,19 +180,6 @@ const Menubar = () => {
                     }}
                 >
                     {notification}
-                </div>
-            )}
-            {item && (
-                <div className="container mt-4">
-                    <h3>Item Details</h3>
-                    <p><strong>ID:</strong> {item.id}</p>
-                    <p><strong>Owner Name:</strong> {item.ownerName}</p>
-                    <p><strong>Item Name:</strong> {item.itemName}</p>
-                    <p><strong>Quantity:</strong> {item.quantity}</p>
-                    <p><strong>Type:</strong> {item.type}</p>
-                    <p><strong>Additional Info:</strong> {item.additionalInfo}</p>
-                    <p><strong>Cost:</strong> {item.cost}</p>
-                    <p><strong>Client ID:</strong> {item.clientId}</p>
                 </div>
             )}
         </div>

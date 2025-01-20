@@ -31,7 +31,7 @@ const router = createBrowserRouter([
         )
     },
     {
-        path: "/stock/view-item",
+        path: "/stock/get-item",
         element: (
             <ViewItem/>
         )
