@@ -15,10 +15,9 @@ const Menubar = () => {
     const [notificationType, setNotificationType] = useState("");
     const [searchMethod, setSearchMethod] = useState("all");
     const [searchValue, setSearchValue] = useState("");
-    const [suggestions, setSuggestions] = useState([]);  // Novo estado para armazenar as sugestões
+    const [suggestions, setSuggestions] = useState([]);
     const navigate = useNavigate();
 
-    // Verifica a autenticação do usuário com base no token
     useEffect(() => {
         const checkAuth = async () => {
             const token = sessionStorage.getItem("AUTH");
@@ -70,21 +69,55 @@ const Menubar = () => {
         }
     };
 
-    // Atualiza o valor do campo de pesquisa e chama a função de busca de sugestões
+    const handleUpdateClient = async () => {
+        const token = sessionStorage.getItem("AUTH");
+        try {
+            const response = await fetch("http://localhost:3000/user/update-client", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ update: true }),
+            });
+    
+            if (response.ok) {
+                setNotification("Clients updated successfully.");
+                setNotificationType("success");
+    
+                setTimeout(() => {
+                    setNotification("");
+                }, 3000);
+            } else {
+                setNotification("Failed to update client.");
+                setNotificationType("error");
+    
+                setTimeout(() => {
+                    setNotification("");
+                }, 3000);
+            }
+        } catch (error) {
+            setNotification("Error updating client.");
+            setNotificationType("error");
+    
+            setTimeout(() => {
+                setNotification("");
+            }, 3000);
+        }
+    };
+
     const handleSearchValueChange = (e) => {
         const value = e.target.value;
         setSearchValue(value);
-        fetchSuggestions(searchMethod, value);  // Busca sugestões ao digitar
+        fetchSuggestions(searchMethod, value);
     };
 
-    // Atualiza o método de pesquisa
     const handleSearchMethodChange = (method) => {
         setSearchMethod(method);
-        setSearchValue("");  // Limpa o campo de pesquisa quando mudar o método
-        setSuggestions([]);  // Limpa as sugestões
+        setSearchValue("");
+        setSuggestions([]);
     };
 
-    // Realiza a pesquisa quando o botão de pesquisa for clicado
     const handleSearch = () => {
         if (!searchValue && searchMethod !== "all") {
             setNotification("Please enter a value to search.");
@@ -112,6 +145,10 @@ const Menubar = () => {
                                 <NavDropdown title="Actions" id="basic-nav-dropdown">
                                     <NavDropdown.Item href="/stock/register-item">Register Item</NavDropdown.Item>
                                     <NavDropdown.Item href="/stock/get-item">Get Item</NavDropdown.Item>
+                                    <NavDropdown.Item href="/stock/get-cost">Get Budget</NavDropdown.Item>
+                                    <NavDropdown.Item href="/stock/get-stock">Get Stock</NavDropdown.Item>
+                                    <NavDropdown.Item href="/stock/switch-item">Switch Item</NavDropdown.Item>
+                                    <NavDropdown.Item onClick={handleUpdateClient}>Update Client</NavDropdown.Item>
                                 </NavDropdown>
                             )}
                         </Nav>
@@ -122,50 +159,68 @@ const Menubar = () => {
                                         {searchMethod}
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu>
-                                        <Dropdown.Item onClick={() => handleSearchMethodChange("id")}>
-                                            Item ID
-                                        </Dropdown.Item>
-                                        <Dropdown.Item onClick={() => handleSearchMethodChange("itemName")}>
-                                            Item Name
-                                        </Dropdown.Item>
-                                        <Dropdown.Item onClick={() => handleSearchMethodChange("type")}>
-                                            Item Type
-                                        </Dropdown.Item>
-                                        <Dropdown.Item onClick={() => handleSearchMethodChange("ownerName")}>
-                                            Owner Name
-                                        </Dropdown.Item>
-                                        <Dropdown.Item onClick={() => handleSearchMethodChange("additionalInfo")}>
-                                            Additional Info
-                                        </Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("id")}>Item ID</Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("itemName")}>Item Name</Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("type")}>Item Type</Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("ownerName")}>Owner Name</Dropdown.Item>
+                                        <Dropdown.Item onClick={() => handleSearchMethodChange("additionalInfo")}>Additional Info</Dropdown.Item>
                                         <Dropdown.Item onClick={() => handleSearchMethodChange("all")}>All</Dropdown.Item>
                                     </Dropdown.Menu>
                                 </Dropdown>
                                 <Form.Control
                                     type="search"
-                                    placeholder="Search"
+                                    placeholder="Search Item"
                                     className="me-2"
                                     aria-label="Search"
                                     style={{ backgroundColor: "white", color: "black" }}
                                     value={searchValue}
-                                    onChange={handleSearchValueChange}  // Atualiza as sugestões ao digitar
+                                    onChange={handleSearchValueChange}
                                 />
                                 <Button variant="light" onClick={handleSearch}>
                                     Search
                                 </Button>
-                                {suggestions.length > 0 && (
-                                    <Dropdown.Menu>
-                                        {suggestions.map((item, index) => (
-                                            <Dropdown.Item key={index} onClick={() => setSearchValue(item)}>
-                                                {item}
-                                            </Dropdown.Item>
-                                        ))}
-                                    </Dropdown.Menu>
-                                )}
                             </Form>
                         )}
                     </Navbar.Collapse>
                 </Container>
             </Navbar>
+
+            {suggestions.length > 0 && (
+                <div style={{
+                    position: "absolute",
+                    top: "55px",
+                    right: "290px",
+                    width: "auto",
+                    maxWidth: "500px",
+                    zIndex: 1000,
+                    backgroundColor: "white",
+                    border: "1px solid #ccc",
+                    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+                    maxHeight: "200px",
+                    overflowY: "auto", // Adiciona rolagem se necessário
+                    padding: "5px", // Espaçamento interno
+                }}>
+                    {suggestions.map((item, index) => (
+                        <div
+                            key={index}
+                            style={{
+                                padding: "10px",
+                                cursor: "pointer",
+                                borderBottom: "1px solid #ccc",
+                                fontSize: "14px",  // Tamanho da fonte igual ao campo de pesquisa
+                                color: "#333",
+                            }}
+                            onClick={() => {
+                                setSearchValue(item);
+                                setSuggestions([]);  // Limpar sugestões após clicar
+                            }}
+                        >
+                            {item}
+                        </div>
+                    ))}
+                </div>
+            )}
+
             {notification && (
                 <div
                     style={{
