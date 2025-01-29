@@ -6,6 +6,7 @@ import Alert from 'react-bootstrap/Alert';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+const serverIP = import.meta.env.VITE_SERVER_IP;
 
 const Register = () => {
     const [username, setUsername] = useState("");
@@ -19,7 +20,7 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         console.log(token);
-        const response = await fetch('http://localhost:3000/user/register', {
+        const response = await fetch(`http://${serverIP}/user/register`, {
             method: "POST", 
             headers: {
                 "Content-Type": "application/json",

@@ -3,6 +3,7 @@ import Menubar from "../../components/Menubar";
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import Alert from 'react-bootstrap/Alert';
+const serverIP = import.meta.env.VITE_SERVER_IP;
 
 const GetCost = () => {
     const [department, setDepartment] = useState("");
@@ -35,7 +36,7 @@ const GetCost = () => {
         const token = sessionStorage.getItem("AUTH");
 
         try {
-            const response = await fetch("http://localhost:3000/user/get-department", {
+            const response = await fetch(`http:///${serverIP}/user/get-department`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -66,7 +67,7 @@ const GetCost = () => {
         const token = sessionStorage.getItem("AUTH");
 
         try {
-            const response = await fetch(`http://localhost:3000/stock/get-cost?department=${department}`, {
+            const response = await fetch(`http:///${serverIP}/stock/get-cost?department=${department}`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${token}`,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Menubar from "../../components/Menubar";
+const serverIP = import.meta.env.VITE_SERVER_IP;
 
 const ItemSearch = () => {
   const [items, setItems] = useState([]);
@@ -15,7 +16,7 @@ const ItemSearch = () => {
 
       try {
         const token = sessionStorage.getItem("AUTH");
-        const response = await fetch('http://localhost:3000/stock/get-stock', {
+        const response = await fetch(`http://${serverIP}/stock/get-stock`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,

@@ -8,6 +8,7 @@ import Button from "react-bootstrap/Button";
 import Dropdown from "react-bootstrap/Dropdown";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+const serverIP = import.meta.env.VITE_SERVER_IP;
 
 const Menubar = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -27,7 +28,7 @@ const Menubar = () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:3000/auth?token=${token}`);
+                const response = await fetch(`http://${serverIP}/auth?token=${token}`);
                 if (response.status === 200) {
                     setIsLoggedIn(true);
                 } else {
@@ -49,7 +50,7 @@ const Menubar = () => {
         }
         const token = sessionStorage.getItem("AUTH");
         try {
-            const response = await fetch(`http://localhost:3000/stock/search-item?method=${method}&value=${value}`,
+            const response = await fetch(`http://${serverIP}/stock/search-item?method=${method}&value=${value}`,
                 {
                     method: "GET",
                     headers: {
@@ -72,7 +73,7 @@ const Menubar = () => {
     const handleUpdateClient = async () => {
         const token = sessionStorage.getItem("AUTH");
         try {
-            const response = await fetch("http://localhost:3000/user/update-client", {
+            const response = await fetch(`http://${serverIP}/user/update-client`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

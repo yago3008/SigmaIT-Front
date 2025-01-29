@@ -4,6 +4,7 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
 import { useState, useEffect } from "react";
+const serverIP = import.meta.env.VITE_SERVER_IP;
 
 const Register = () => {
     const [ownerName, setOwnerName] = useState("");
@@ -34,7 +35,7 @@ const Register = () => {
     // Função para buscar usuários
     const fetchUsers = async (query) => {
         try {
-            const response = await fetch(`http://localhost:3000/user/search-user?name=${query}`, {
+            const response = await fetch(`http://${serverIP}/user/search-user?name=${query}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -85,7 +86,7 @@ const Register = () => {
             try {
                 if (showTemplateSwitch) {
                     setShowAdditionalInfo(false);
-                    const response = await fetch("http://localhost:3000/stock/get-template", {
+                    const response = await fetch(`http://${serverIP}/stock/get-template`, {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
@@ -113,7 +114,7 @@ const Register = () => {
         e.preventDefault();
         const templateData = selectedTemplate ? JSON.parse(selectedTemplate) : {};
         const finalAdditionalInfo = { ...additionalInfo, ...templateData };
-        const response = await fetch("http://localhost:3000/stock/register-item", {
+        const response = await fetch(`http://${serverIP}/stock/register-item`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -207,7 +208,7 @@ const Register = () => {
 
                         <Form.Group className="mb-3">
                             <Form.Label>Quantity</Form.Label>
-                            <Form.Select onChange={(e) => setQuantity(Number(e.target.value))}>
+                            <Form.Select size="1" onChange={(e) => setQuantity(Number(e.target.value))}>
                                 {[...Array(101).keys()].map((num) => (
                                     <option key={num} value={num}>
                                         {num}
@@ -288,6 +289,26 @@ const Register = () => {
                                     >
                                         Add
                                     </Button>
+                                </div>
+                                <div>
+                                <Form.Check
+                                    type="checkbox"
+                                    label="Save template"
+                                    checked={saveTemplate}
+                                    onChange={(e) => setSaveTemplate(e.target.checked)}
+                                />
+                                
+                                {saveTemplate && (
+                                    <Form.Group controlId="templateName">
+                                        <Form.Label>Template Name</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Enter template name"
+                                            value={templateName}
+                                            onChange={(e) => setTemplateName(e.target.value)}
+                                        />
+                                    </Form.Group>
+                                )}
                                 </div>
                                 <div className={styles.additionalInfoList}>
                                     <strong>Current Additional Info:</strong>

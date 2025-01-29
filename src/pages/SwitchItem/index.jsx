@@ -3,6 +3,7 @@ import Menubar from "../../components/Menubar";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Alert from "react-bootstrap/Alert";
+const serverIP = import.meta.env.VITE_SERVER_IP;
 
 const SwitchItem = () => {
     const [user, setUser] = useState("");
@@ -36,7 +37,7 @@ const SwitchItem = () => {
             setItemSuggestions([]);
             setFilteredItems([]);
         }
-    }, []);
+    }, [item]);
 
     useEffect(() => {
         if (item) {
@@ -51,7 +52,7 @@ const SwitchItem = () => {
 
     const fetchUsers = async (query) => {
         try {
-            const response = await fetch(`http://localhost:3000/user/search-user?name=${query}`, {
+            const response = await fetch(`http://${serverIP}/user/search-user?name=${query}`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -71,7 +72,7 @@ const SwitchItem = () => {
 
     const fetchItems = async () => {
         try {
-            const response = await fetch("http://localhost:3000/stock/get-item?method=all", {
+            const response = await fetch(`http://${serverIP}/stock/get-item?method=all`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -98,7 +99,7 @@ const SwitchItem = () => {
         setError(null);
         setLoading(true);
         try {
-            const response = await fetch("http://localhost:3000/stock/switch-item", {
+            const response = await fetch(`http://${serverIP}/stock/switch-item`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -203,6 +204,7 @@ const SwitchItem = () => {
                                                 setFilteredItems([]);
                                             }}
                                         >
+                                            
                                             {i.itemName?.toString()} - {i.type?.toString()} - {i.ownerName?.toString()}
                                         </li>
                                     ))}
@@ -210,28 +212,6 @@ const SwitchItem = () => {
                             )}
                         </div>
                     </Form.Group>
-
-                    {/* Add Additional Info Section */}
-                    <Form.Group className="mb-3">
-                        <Form.Check
-                            type="checkbox"
-                            label="Add Additional Info"
-                            checked={addAdditionalInfo}
-                            onChange={() => setAddAdditionalInfo(!addAdditionalInfo)}
-                        />
-                    </Form.Group>
-
-                    {/* Checkbox for Save Template will only appear if Add Additional Info is checked */}
-                    {addAdditionalInfo && (
-                        <Form.Group className="mb-3">
-                            <Form.Check
-                                type="checkbox"
-                                label="Save Template"
-                                checked={saveTemplate}
-                                onChange={() => setSaveTemplate(!saveTemplate)} // Toggle the checkbox state
-                            />
-                        </Form.Group>
-                    )}
 
                     <Button variant="primary" onClick={handleSubmit} disabled={loading}>
                         {loading ? "Processing..." : "Switch Item"}
